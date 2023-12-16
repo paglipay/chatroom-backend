@@ -31,7 +31,7 @@ export class RedisService {
     this.client.del(key, callback);
   }
 
-  public publish(channel: string, message: any): void {
-    this.client.publish(channel, JSON.stringify(message));
+  public publish(key: string, value: string, callback?: redis.Callback<number>): void {
+    this.client.publish(key, value, callback);
   }
 }

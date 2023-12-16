@@ -22,6 +22,10 @@ setChatRoutes(app);
 //implement SocketService
 const socketService = new SocketService(server);
 
+// socketService.consume('layout', async (message) => {
+//   console.log('Message received: ', message);
+//   io.emit('layout', message);
+// });
 // // Set up Socket.IO
 // io.on('connection', (socket) => {
 //   console.log('a user connected');

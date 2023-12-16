@@ -2,9 +2,11 @@ import { Server } from 'socket.io';
 import redisAdapter from 'socket.io-redis';
 import { createAdapter } from 'socket.io-redis';
 import Redis from 'ioredis';
+import { RedisConfig } from './configs';
 
 export class SocketService {
   private io: Server;
+  private redis: Redis;
 
   constructor(server: any) {
     this.io = new Server(server, {
@@ -12,7 +14,13 @@ export class SocketService {
     });
 
     // Redis client setup
-    const redis = new Redis({ host: 'localhost', port: 6379 })
+    this.redis = new Redis({ host: 'localhost', port: 6379 })
+
+    const redisConfig = new RedisConfig();
+    redisConfig.consume("layout", async (message: string) => {
+      console.log("📨 Received message:", message);
+      this.io.emit('layout', message);
+    });
 
     this.io.on('connection', (socket) => {
       console.log('User connected');
@@ -25,13 +33,13 @@ export class SocketService {
 
         try {
           // Store the chat message in Redis as a chat log
-          await redis.lpush('chatLogs', msg);
+          await this.redis.lpush('chatLogs', msg);
           console.log('Message stored in Redis');
         } catch (error) {
           console.error('Error storing message in Redis:', error);
         }
         // Retrieve the chat message in Redis
-        const messages = await redis.lrange('chatLogs', 0, -1);
+        const messages = await this.redis.lrange('chatLogs', 0, -1);
 
         // Emit the message to all connected clients
         this.io.emit('messages', messages);
@@ -39,21 +47,25 @@ export class SocketService {
       });
       // Handle incoming chat messages
       socket.on('set layout', async (msg) => {
-
-        try {
+        console.log('set layout: ' + msg);
+        // try {
           // Store the chat message in Redis as a chat log
-          await redis.set('layout', msg);
-          console.log('Message stored in Redis');
-        } catch (error) {
-          console.error('Error storing message in Redis:', error);
-        }
-        // Retrieve the chat message in Redis
-        const layout = await redis.get('layout');
+          // await this.redis.set('layout', msg);
+        const redisConfig = new RedisConfig();
+        redisConfig.produce("layout", msg);
+        console.log('Message stored in Redis');
+        // } catch (error) {
+        //   console.error('Error storing message in Redis:', error);
+        // }
+        // // Retrieve the chat message in Redis
+        // const layout = await redis.get('layout');
 
-        // Emit the message to all connected clients
-        this.io.emit('layout', layout);
+        // // Emit the message to all connected clients
+        // this.io.emit('layout', layout);
 
       });
     });
   }
+
+
 }

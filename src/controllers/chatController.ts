@@ -12,8 +12,10 @@ export class ChatController {
     this.getMessages = this.getMessages.bind(this);
     this.getChatLogs = this.getChatLogs.bind(this);
     this.getLayout = this.getLayout.bind(this);
+    this.setLayout = this.setLayout.bind(this);
 
   }
+
 
   public async sendMessage(req: Request, res: Response): Promise<void> {
     const { message, user } = req.body;
@@ -44,8 +46,23 @@ export class ChatController {
 
   public getLayout(req: Request, res: Response): void {
     this.redisService.get('layout', (err, messages) => {
-      console.log('getLayout', messages);
-      res.status(200).send({ messages });
+      // console.log('getLayout', messages);
+      
+      const result = JSON.parse(messages as string);
+      res.status(200).send(result);
+    });
+  }
+ 
+  public async setLayout(req: Request, res: Response): Promise<void> {
+
+    console.log('req.body', req.body);
+    this.redisService.publish('layout', JSON.stringify(req.body), (err) => {
+      if (err) {
+        console.error('Error sending message:', err);
+        res.status(500).send({ error: 'Failed to send message' });
+      } else {
+        res.status(200).send({ status: 'Message sent' });
+      }
     });
   }
 
